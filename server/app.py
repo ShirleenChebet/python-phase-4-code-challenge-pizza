@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 from models import db, Restaurant, RestaurantPizza, Pizza
 from flask_migrate import Migrate
-from flask import Flask, request, make_response, jsonify
-from flask_restful import Api, Resource
+from flask import Flask, request, jsonify
+from flask_restful import Api
 import os
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -19,12 +19,11 @@ db.init_app(app)
 
 api = Api(app)
 
-
 @app.route("/")
 def index():
     return "<h1>Code challenge</h1>"
 
-# GET / restaurants
+# GET /restaurants
 @app.route('/restaurants', methods=['GET'])
 def get_restaurants():
     restaurants = Restaurant.query.all()
@@ -33,7 +32,7 @@ def get_restaurants():
 # GET /restaurants/<int:id>
 @app.route('/restaurants/<int:id>', methods=['GET'])
 def get_restaurant_by_id(id):
-    restaurant = Restaurant.query.get(id)
+    restaurant = db.session.get(Restaurant, id)
     if not restaurant:
         return jsonify({"error": "Restaurant not found"}), 404
 
@@ -53,11 +52,10 @@ def get_restaurant_by_id(id):
 
     return jsonify(restaurant_data)
 
-
 # DELETE /restaurants/<int:id>
 @app.route('/restaurants/<int:id>', methods=['DELETE'])
 def delete_restaurant(id):
-    restaurant = Restaurant.query.get(id)
+    restaurant = db.session.get(Restaurant, id)
     if not restaurant:
         return jsonify({"error": "Restaurant not found"}), 404
 
@@ -90,8 +88,8 @@ def create_restaurant_pizza():
         return jsonify({"errors": ["validation errors"]}), 400
 
     # Validate pizza and restaurant existence
-    pizza = Pizza.query.get(pizza_id)
-    restaurant = Restaurant.query.get(restaurant_id)
+    pizza = db.session.get(Pizza, pizza_id)
+    restaurant = db.session.get(Restaurant, restaurant_id)
     if not pizza or not restaurant:
         return jsonify({"errors": ["validation errors"]}), 400
 
@@ -107,7 +105,7 @@ def create_restaurant_pizza():
         response_data["restaurant"] = restaurant.to_dict()
         return jsonify(response_data), 201
 
-    except Exception as e:
+    except Exception:
         # Handle unexpected errors (e.g., database errors)
         return jsonify({"errors": ["validation errors"]}), 400
 
